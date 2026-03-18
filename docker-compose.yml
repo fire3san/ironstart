@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  ironstart:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
+    networks:
+      - proxy_net
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+
+  # ==========================================
+  # CLOUDFLARE TUNNEL
+  # ==========================================
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared_ironstarttunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --url http://ironstart:3000
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    networks:
+      - proxy_net
+    depends_on:
+      - ironstart
+
+# ==========================================
+# NETWORK DEFINITION (Crucial Part)
+# ==========================================
+networks:
+  proxy_net:
+    driver: bridge
